@@ -163,6 +163,23 @@ class Git < Thor
     end
   end
 
+  desc "deleted", "find deleted files and send them to 'git rm'"
+  def deleted
+    unmodified = false
+    IO.popen 'git status' do |io|
+      io.readlines.each do |line|
+        if line =~ /Changed but not updated/
+          unmodified = true
+        elsif unmodified
+          if line =~ /^#\s*deleted:\s*/
+            system 'git rm "' << line.split('deleted:').last.strip << '"'
+          end
+        end
+      end
+    end
+    system('git status')
+  end
+
   private
   
   def git_branch(what = nil, opts = {})
@@ -275,4 +292,5 @@ class Git < Thor
     chroot
     (not File.readlines(".git/config").grep(/^\[svn-remote "svn"\]\s*$/).empty?)
   end
+  
 end
